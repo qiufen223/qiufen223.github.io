@@ -1,425 +1,546 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>像素吞噬者</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #05060a;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    overflow: hidden;
-  }
-  #wrap {
-    position: relative;
-    box-shadow: 0 0 80px rgba(80,140,255,0.15);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  canvas { display: block; cursor: none; }
-  #hud {
-    position: absolute;
-    top: 16px;
-    left: 20px;
-    color: #9fb4ff;
-    font-size: 14px;
-    letter-spacing: 1px;
-    pointer-events: none;
-    text-shadow: 0 0 8px rgba(80,140,255,0.6);
-  }
-  #hud span { color: #fff; font-weight: 700; }
-  #overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(5,6,10,0.85);
-    color: #dce6ff;
-    text-align: center;
-    backdrop-filter: blur(4px);
-    transition: opacity .4s;
-  }
-  #overlay.hidden { opacity: 0; pointer-events: none; }
-  #overlay h1 {
-    font-size: 34px;
-    margin-bottom: 12px;
-    letter-spacing: 4px;
-    background: linear-gradient(90deg,#5b8cff,#a45bff,#5bffd0);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  #overlay p { font-size: 14px; line-height: 1.9; color: #8fa3cc; max-width: 340px; }
-  #overlay .key { color: #5bffd0; font-weight: 700; }
-  #overlay button {
-    margin-top: 22px;
-    padding: 12px 38px;
-    font-size: 15px;
-    letter-spacing: 3px;
-    color: #05060a;
-    background: linear-gradient(90deg,#5bffd0,#5b8cff);
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    font-weight: 700;
-    transition: transform .2s, box-shadow .2s;
-  }
-  #overlay button:hover {
-    transform: scale(1.06);
-    box-shadow: 0 0 24px rgba(91,255,208,0.6);
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>😎 表情包大作战 · 乐子点击器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a1e2b 0%, #2d3349 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      margin: 0;
+    }
+
+    .game-container {
+      background: rgba(22, 26, 38, 0.85);
+      backdrop-filter: blur(8px);
+      border-radius: 64px 64px 48px 48px;
+      padding: 28px 36px 42px;
+      box-shadow: 0 30px 40px rgba(0, 0, 0, 0.6), inset 0 1px 4px rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 215, 100, 0.2);
+      max-width: 760px;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      background: #0f121c;
+      padding: 16px 26px;
+      border-radius: 100px;
+      border: 1px solid #ffd96633;
+      box-shadow: inset 0 4px 8px #00000055, 0 6px 12px #00000030;
+    }
+
+    .score-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-label {
+      color: #b9c2da;
+      font-weight: 600;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px black;
+    }
+
+    .score-value {
+      color: #ffe484;
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 0 16px #ffb347, 0 4px 8px black;
+      transition: transform 0.1s ease;
+      min-width: 90px;
+      text-align: center;
+    }
+
+    .score-value.bump {
+      transform: scale(1.3);
+    }
+
+    .timer-box {
+      background: #21273b;
+      padding: 10px 22px;
+      border-radius: 60px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: inset 0 2px 6px #00000088, 0 5px 0 #0b0d14;
+      border: 1px solid #555e7a;
+    }
+
+    .timer-icon {
+      font-size: 2rem;
+      filter: drop-shadow(0 2px 4px black);
+    }
+
+    .timer-text {
+      color: #eef3ff;
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 10px #5faaff, 0 2px 0 black;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .arena {
+      background: #191e2b;
+      border-radius: 60px;
+      padding: 26px 24px 32px;
+      border: 2px solid #3a4057;
+      box-shadow: inset 0 0 40px #00000099, 0 20px 30px #0000004d;
+      margin-bottom: 28px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .arena.border-pulse {
+      border-color: #ffd966;
+    }
+
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      justify-items: center;
+      align-items: center;
+      min-height: 260px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .emoji-btn {
+      background: #262d40;
+      border: none;
+      border-radius: 32px;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      font-size: 3.8rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 12px 0 #0b0e15, 0 8px 18px black, inset 0 -2px 8px #ffffff33, inset 0 4px 8px #ffffff1a;
+      transition: all 0.08s linear;
+      transform: translateY(-4px);
+      border: 1px solid #ffffff1e;
+      will-change: transform, box-shadow;
+      padding: 0;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px #ffd96655);
+    }
+
+    .emoji-btn:hover {
+      background: #303952;
+      filter: drop-shadow(0 0 12px #ffeeaa);
+    }
+
+    .emoji-btn:active {
+      transform: translateY(6px) scale(0.96);
+      box-shadow: 0 4px 0 #0b0e15, 0 8px 18px black, inset 0 -2px 8px #ffffff33;
+    }
+
+    /* 被点击时的特殊效果（会移除） */
+    .emoji-btn.pop {
+      animation: pop 0.2s cubic-bezier(0.2, 1.6, 0.4, 1);
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1) translateY(0); }
+      40% { transform: scale(1.25) translateY(-8px); background: #4a546e; }
+      100% { transform: scale(1) translateY(-4px); }
+    }
+
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      padding: 0 8px;
+    }
+
+    .reset-btn {
+      background: #2a3149;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 28px;
+      color: #f0e6c5;
+      font-weight: 700;
+      font-size: 1.3rem;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #0f121d, 0 10px 20px black;
+      transition: all 0.08s linear;
+      border: 1px solid #ffd96666;
+      transform: translateY(-2px);
+      text-shadow: 0 2px 4px black;
+    }
+
+    .reset-btn:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 #0f121d, 0 8px 18px black;
+    }
+
+    .reset-btn span {
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .status-message {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #aab3d0;
+      background: #0f121c;
+      padding: 12px 32px;
+      border-radius: 60px;
+      box-shadow: inset 0 3px 8px #00000099;
+      border: 1px solid #5f6a8a;
+      text-align: center;
+      flex: 1;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+      min-height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .status-message.combo-flash {
+      color: #ffe484;
+      background: #20273f;
+      box-shadow: 0 0 20px #ffbb33, inset 0 0 8px #ffd966;
+      border-color: #ffd966;
+    }
+
+    .combo-tag {
+      color: #ffc107;
+      font-size: 1.9rem;
+      font-weight: 900;
+      text-shadow: 0 0 12px orange;
+      vertical-align: middle;
+    }
+
+    /* 适配小屏 */
+    @media (max-width: 560px) {
+      .game-container { padding: 18px 18px 28px; }
+      .emoji-grid { gap: 10px; }
+      .emoji-btn { font-size: 2.6rem; border-radius: 24px; }
+      .score-value { font-size: 2rem; min-width: 70px; }
+      .timer-text { font-size: 1.8rem; min-width: 60px; }
+      .timer-icon { font-size: 1.6rem; }
+      .status-message { font-size: 1.1rem; padding: 8px 14px; }
+      .reset-btn { font-size: 1rem; padding: 10px 18px; }
+      .reset-btn span { font-size: 1.4rem; }
+    }
+  </style>
 </head>
 <body>
-<div id="wrap">
-  <canvas id="game" width="820" height="560"></canvas>
-  <div id="hud">
-    关卡 <span id="lvl">1</span> &nbsp;|&nbsp; 剩余光点 <span id="dots">0</span> &nbsp;|&nbsp; 体型 <span id="size">10</span>
+<div class="game-container">
+  <!-- 头部计分 + 倒计时 -->
+  <div class="header">
+    <div class="score-wrap">
+      <span class="score-label">🎯 得分</span>
+      <span class="score-value" id="scoreDisplay">0</span>
+    </div>
+    <div class="timer-box">
+      <span class="timer-icon">⏳</span>
+      <span class="timer-text" id="timerDisplay">30</span>
+    </div>
   </div>
-  <div id="overlay">
-    <h1>像素吞噬者</h1>
-    <p>
-      移动鼠标操控黑洞，吞掉所有<span class="key">蓝色光点</span>过关。<br>
-      吃光点会<span class="key">变大变慢</span>，吃白色反物质会<span class="key">缩小变快</span>。<br>
-      利用体型变化穿过狭窄缝隙，别让黑洞超出边界。
-    </p>
-    <button id="startBtn">开 始</button>
+
+  <!-- 游戏主区域 -->
+  <div class="arena" id="arena">
+    <div class="emoji-grid" id="emojiGrid">
+      <!-- 动态生成 4x2 = 8 个表情按钮，但用js生成也行，这里用静态占位保证不出错，js会替换 -->
+    </div>
+  </div>
+
+  <!-- 底部控制 + 状态 -->
+  <div class="action-bar">
+    <button class="reset-btn" id="resetBtn"><span>🔄</span> 重来</button>
+    <div class="status-message" id="statusMsg">点击表情包！别停！</div>
   </div>
 </div>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const W = canvas.width, H = canvas.height;
+  (function(){
+    // ----- 游戏配置 (保守安全，无高级API) -----
+    const EMOJIS = ['😂', '🤣', '😎', '🥳', '😜', '🤪', '😝', '🙃', '😏', '🥸', '🤩', '😇', '🐶', '🐱', '🦊', '🐼'];
+    const GRID_SIZE = 8;          // 4x2 = 8个格子
+    const INIT_TIME = 30;         // 30秒倒计时
+    const POINTS_PER_HIT = 10;    // 每次点击基础分
+    const COMBO_BONUS = 5;        // 连击额外加分基数 (第n次连击加 n*5)
 
-const overlay = document.getElementById('overlay');
-const startBtn = document.getElementById('startBtn');
-const lvlEl = document.getElementById('lvl');
-const dotsEl = document.getElementById('dots');
-const sizeEl = document.getElementById('size');
+    // ----- DOM 元素 -----
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const emojiGrid = document.getElementById('emojiGrid');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusMsg = document.getElementById('statusMsg');
+    const arena = document.getElementById('arena');
 
-let mouse = { x: W/2, y: H/2 };
-let keys = {};
-let game = null;
-let running = false;
-let animId = null;
+    // ----- 游戏状态 -----
+    let score = 0;
+    let timeLeft = INIT_TIME;
+    let gameActive = false;       // true 表示游戏进行中
+    let timerInterval = null;
 
-// ---------- 音效（WebAudio 合成，无需外部文件）----------
-let audioCtx = null;
-function beep(freq, dur, type='sine', vol=0.08) {
-  if (!audioCtx) return;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type;
-  o.frequency.value = freq;
-  g.gain.setValueAtTime(vol, audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start(); o.stop(audioCtx.currentTime + dur);
-}
+    // 连击计数器 (连续点击同一个表情不重置，点击不同表情重置? 为了趣味: 点击不同表情重置连击)
+    let lastEmoji = null;         // 上一次点击的表情符号
+    let comboCount = 0;           // 当前连击次数 (连续点击同一个表情)
 
-// ---------- 实体 ----------
-class Particle {
-  constructor(x, y, color) {
-    this.x = x; this.y = y;
-    const a = Math.random() * Math.PI * 2;
-    const s = Math.random() * 4 + 1;
-    this.vx = Math.cos(a) * s;
-    this.vy = Math.sin(a) * s;
-    this.life = 1;
-    this.color = color;
-    this.r = Math.random() * 3 + 1;
-  }
-  update() {
-    this.x += this.vx; this.y += this.vy;
-    this.vx *= 0.94; this.vy *= 0.94;
-    this.life -= 0.02;
-  }
-  draw() {
-    ctx.globalAlpha = Math.max(this.life, 0);
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r * this.life, 0, Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-}
+    // 存储所有按钮元素，用于更新表情
+    let emojiButtons = [];
 
-class Dot {
-  constructor(x, y, type) {
-    this.x = x; this.y = y;
-    this.type = type; // 'food' | 'anti'
-    this.r = type === 'food' ? 5 : 7;
-    this.pulse = Math.random() * Math.PI * 2;
-    this.dead = false;
-  }
-  update() {
-    this.pulse += 0.08;
-  }
-  draw() {
-    const pr = this.r + Math.sin(this.pulse) * 1.5;
-    ctx.save();
-    ctx.shadowBlur = 18;
-    if (this.type === 'food') {
-      ctx.shadowColor = '#5b8cff';
-      ctx.fillStyle = '#8fb4ff';
-    } else {
-      ctx.shadowColor = '#ffffff';
-      ctx.fillStyle = '#ffffff';
-    }
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, pr, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-class Hole {
-  constructor(x, y) {
-    this.x = x; this.y = y;
-    this.vx = 0; this.vy = 0;
-    this.baseR = 10;
-    this.r = 10;
-    this.maxR = 70;
-    this.minR = 8;
-  }
-  get speedFactor() {
-    // 越大越慢
-    return 1.6 - (this.r - this.minR) / (this.maxR - this.minR) * 1.2;
-  }
-  update() {
-    // 朝鼠标方向带惯性移动
-    const dx = mouse.x - this.x;
-    const dy = mouse.y - this.y;
-    const acc = 0.9 * this.speedFactor;
-    this.vx += dx * 0.006 * acc;
-    this.vy += dy * 0.006 * acc;
-    this.vx *= 0.90;
-    this.vy *= 0.90;
-    this.x += this.vx;
-    this.y += this.vy;
-
-    // 边界反弹
-    if (this.x - this.r < 0) { this.x = this.r; this.vx *= -0.5; }
-    if (this.x + this.r > W) { this.x = W - this.r; this.vx *= -0.5; }
-    if (this.y - this.r < 0) { this.y = this.r; this.vy *= -0.5; }
-    if (this.y + this.r > H) { this.y = H - this.r; this.vy *= -0.5; }
-
-    // 半径平滑趋近目标
-    this.r += (this.targetR - this.r) * 0.08;
-  }
-  draw() {
-    // 引力扭曲光环
-    const g = ctx.createRadialGradient(this.x, this.y, this.r*0.4, this.x, this.y, this.r*2.2);
-    g.addColorStop(0, 'rgba(120,90,255,0.35)');
-    g.addColorStop(0.5, 'rgba(80,120,255,0.10)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r*2.2, 0, Math.PI*2);
-    ctx.fill();
-
-    // 事件视界
-    ctx.save();
-    ctx.shadowBlur = 30;
-    ctx.shadowColor = '#7a5bff';
-    ctx.fillStyle = '#0a0a12';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-
-    // 边缘亮环
-    ctx.strokeStyle = 'rgba(150,120,255,0.9)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-    ctx.stroke();
-  }
-}
-
-// ---------- 关卡生成 ----------
-function makeLevel(level) {
-  const dots = [];
-  const count = 14 + level * 5;
-  const margin = 60;
-  for (let i = 0; i < count; i++) {
-    dots.push(new Dot(
-      margin + Math.random() * (W - margin*2),
-      margin + Math.random() * (H - margin*2),
-      'food'
-    ));
-  }
-  // 反物质数量随关卡增加
-  const antiCount = 2 + Math.floor(level / 2);
-  for (let i = 0; i < antiCount; i++) {
-    dots.push(new Dot(
-      margin + Math.random() * (W - margin*2),
-      margin + Math.random() * (H - margin*2),
-      'anti'
-    ));
-  }
-  return dots;
-}
-
-function resetLevel(level) {
-  game = {
-    hole: new Hole(W/2, H/2),
-    dots: makeLevel(level),
-    particles: [],
-    level: level,
-    totalFood: 0,
-    eaten: 0,
-    shake: 0,
-    time: 0
-  };
-  game.hole.targetR = game.hole.r;
-  game.totalFood = game.dots.filter(d => d.type === 'food').length;
-  updateHUD();
-}
-
-function updateHUD() {
-  lvlEl.textContent = game.level;
-  dotsEl.textContent = game.totalFood - game.eaten;
-  sizeEl.textContent = Math.round(game.hole.r);
-}
-
-// ---------- 游戏主循环 ----------
-function loop() {
-  if (!running) return;
-  game.time++;
-  game.shake *= 0.9;
-
-  ctx.fillStyle = '#05060a';
-  ctx.fillRect(0, 0, W, H);
-
-  // 网格背景
-  ctx.strokeStyle = 'rgba(60,90,160,0.08)';
-  ctx.lineWidth = 1;
-  for (let x = 0; x < W; x += 40) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let y = 0; y < H; y += 40) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-
-  ctx.save();
-  if (game.shake > 0.5) {
-    ctx.translate((Math.random()-0.5)*game.shake, (Math.random()-0.5)*game.shake);
-  }
-
-  // 更新黑洞
-  game.hole.update();
-
-  // 更新光点
-  for (const d of game.dots) {
-    if (d.dead) continue;
-    d.update();
-
-    // 黑洞吸引
-    const dx = game.hole.x - d.x;
-    const dy = game.hole.y - d.y;
-    const dist = Math.hypot(dx, dy);
-    const pullRadius = game.hole.r * 3.5;
-    if (dist < pullRadius && dist > 1) {
-      const force = (1 - dist / pullRadius) * 0.6;
-      d.x += (dx / dist) * force * 3;
-      d.y += (dy / dist) * force * 3;
+    // ----- 辅助函数 -----
+    // 随机获取一个表情
+    function getRandomEmoji() {
+      return EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
     }
 
-    // 吞噬判定
-    if (dist < game.hole.r + d.r * 0.5) {
-      d.dead = true;
-      if (d.type === 'food') {
-        game.eaten++;
-        game.hole.targetR = Math.min(game.hole.maxR, game.hole.targetR + 4);
-        for (let i = 0; i < 10; i++) game.particles.push(new Particle(d.x, d.y, '#8fb4ff'));
-        beep(520 + Math.random()*200, 0.12, 'sine', 0.06);
-      } else {
-        game.hole.targetR = Math.max(game.hole.minR, game.hole.targetR - 12);
-        for (let i = 0; i < 16; i++) game.particles.push(new Particle(d.x, d.y, '#ffffff'));
-        game.shake = 14;
-        beep(160, 0.25, 'sawtooth', 0.08);
+    // 更新分数显示 (带动画类)
+    function updateScoreUI(animate = true) {
+      scoreDisplay.textContent = score;
+      if (animate) {
+        scoreDisplay.classList.add('bump');
+        setTimeout(() => {
+          scoreDisplay.classList.remove('bump');
+        }, 100);
       }
-      updateHUD();
     }
-  }
 
-  // 绘制光点
-  for (const d of game.dots) if (!d.dead) d.draw();
+    // 更新计时器显示
+    function updateTimerUI() {
+      timerDisplay.textContent = timeLeft;
+    }
 
-  // 绘制黑洞
-  game.hole.draw();
+    // 设置状态消息 (可带闪烁效果)
+    function setStatusMessage(text, flash = false) {
+      statusMsg.textContent = text;
+      if (flash) {
+        statusMsg.classList.add('combo-flash');
+        setTimeout(() => {
+          statusMsg.classList.remove('combo-flash');
+        }, 300);
+      }
+    }
 
-  // 粒子
-  game.particles = game.particles.filter(p => p.life > 0);
-  for (const p of game.particles) { p.update(); p.draw(); }
+    // 为所有按钮分配新表情 (并重置连击)
+    function randomizeAllButtons() {
+      for (let btn of emojiButtons) {
+        btn.textContent = getRandomEmoji();
+      }
+    }
 
-  ctx.restore();
+    // 停止计时器 (清除interval)
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
 
-  // 过关判定
-  if (game.eaten >= game.totalFood) {
-    running = false;
-    beep(660, 0.15, 'sine', 0.1);
-    setTimeout(() => beep(880, 0.3, 'sine', 0.1), 150);
-    showOverlay(`关卡 ${game.level} 完成！`, '进入更难的下一关', '下一关', () => {
-      resetLevel(game.level + 1);
-      running = true;
-      loop();
-    });
-    return;
-  }
+    // 开始倒计时
+    function startTimer() {
+      stopTimer(); // 确保没有残留
+      timerInterval = setInterval(() => {
+        if (!gameActive) return; // 如果游戏非活跃，不减少时间(但会继续跑，后面会停止)
+        if (timeLeft > 0) {
+          timeLeft -= 1;
+          updateTimerUI();
 
-  animId = requestAnimationFrame(loop);
-}
+          // 倒计时少于5秒时改变颜色 (可选，不加也行)
+          if (timeLeft <= 5) {
+            timerDisplay.style.color = '#ff7b7b';
+          } else {
+            timerDisplay.style.color = '#eef3ff';
+          }
 
-// ---------- 覆盖层控制 ----------
-let overlayAction = null;
-function showOverlay(title, desc, btnText, action) {
-  overlay.innerHTML = `
-    <h1>${title}</h1>
-    <p>${desc}</p>
-    <button id="startBtn">${btnText}</button>
-  `;
-  overlay.classList.remove('hidden');
-  overlayAction = action;
-  document.getElementById('startBtn').onclick = () => {
-    overlay.classList.add('hidden');
-    if (overlayAction) overlayAction();
-  };
-}
+          // 时间到0，结束游戏
+          if (timeLeft <= 0) {
+            timeLeft = 0;
+            updateTimerUI();
+            endGame();
+          }
+        }
+      }, 1000);
+    }
 
-// ---------- 输入 ----------
-canvas.addEventListener('mousemove', e => {
-  const rect = canvas.getBoundingClientRect();
-  mouse.x = (e.clientX - rect.left) * (W / rect.width);
-  mouse.y = (e.clientY - rect.top) * (H / rect.height);
-});
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const t = e.touches[0];
-  mouse.x = (t.clientX - rect.left) * (W / rect.width);
-  mouse.y = (t.clientY - rect.top) * (H / rect.height);
-}, { passive: false });
+    // 结束游戏 (时间到)
+    function endGame() {
+      gameActive = false;
+      stopTimer();
+      // 禁用所有按钮点击 (视觉上通过指针事件禁用，但保留样式)
+      emojiButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.style.cursor = 'default';
+      });
+      setStatusMessage('⏰ 时间到！点“重来”继续嗨！', true);
+      arena.classList.add('border-pulse');
+      setTimeout(() => arena.classList.remove('border-pulse'), 600);
+    }
 
-// ---------- 启动 ----------
-startBtn.onclick = () => {
-  if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-  }
-  overlay.classList.add('hidden');
-  resetLevel(1);
-  running = true;
-  loop();
-};
+    // 重置游戏至初始状态
+    function resetGame() {
+      // 停止任何进行中的计时器
+      stopTimer();
+
+      // 重置变量
+      gameActive = true;
+      score = 0;
+      timeLeft = INIT_TIME;
+      comboCount = 0;
+      lastEmoji = null;
+
+      // 更新UI
+      updateScoreUI(false);
+      updateTimerUI();
+      timerDisplay.style.color = '#eef3ff'; // 恢复颜色
+
+      // 恢复所有按钮
+      emojiButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        // 表情随机 (后面randomize会再做一次，但为了保险)
+      });
+      randomizeAllButtons(); // 重置所有表情
+
+      // 重置状态消息
+      setStatusMessage('⚡ 快点击表情包！连击有加分！', false);
+      statusMsg.classList.remove('combo-flash');
+
+      // 移除竞技场高亮
+      arena.classList.remove('border-pulse');
+
+      // 开始倒计时
+      startTimer();
+    }
+
+    // 处理表情点击
+    function onEmojiClick(event) {
+      const btn = event.currentTarget;
+      if (!gameActive) return;         // 游戏未激活，忽略
+      if (btn.disabled) return;        // 按钮被禁用 (额外安全)
+
+      // 获取当前按钮上的表情
+      const currentEmoji = btn.textContent;
+
+      // 连击逻辑：如果和上次点击的表情相同，连击+1，否则重置为1
+      if (currentEmoji === lastEmoji) {
+        comboCount += 1;
+      } else {
+        comboCount = 1;   // 新表情，连击从1开始
+        lastEmoji = currentEmoji;
+      }
+
+      // 计算本次得分: 基础分 + 连击奖励 (第2次连击起才有额外奖励，更刺激)
+      let pointsEarned = POINTS_PER_HIT;
+      if (comboCount > 1) {
+        // 连击奖励：第2次加5分，第3次加10分... 最多不超过25额外分防止太离谱
+        const bonus = Math.min(COMBO_BONUS * (comboCount - 1), 25);
+        pointsEarned += bonus;
+      }
+
+      // 累加分数
+      score += pointsEarned;
+
+      // 更新分数显示 (带弹跳动画)
+      updateScoreUI(true);
+
+      // 按钮动画 (pop类)
+      btn.classList.add('pop');
+      // 短暂延迟后移除，让动画可以多次触发
+      setTimeout(() => {
+        btn.classList.remove('pop');
+      }, 200);
+
+      // 修改按钮表情 (点击后随机变成另一个表情，增加趣味和连击变数)
+      const newEmoji = getRandomEmoji();
+      btn.textContent = newEmoji;
+
+      // 如果新表情恰好和上次相同 (小概率)，我们让连击保留？但是为了公平，还是看下次点击。
+      // 但这里注意：lastEmoji仍然保持为之前点击的表情，用户下次点击这个按钮如果正好是newEmoji且等于lastEmoji才触发连击。
+      // 然而我们要更新lastEmoji吗？ 按照设计：点击后按钮变了，但是连击是基于用户点击那一刻的表情。
+      // 所以我们不改变lastEmoji，保留之前的。如果用户下次点击其他表情，且那个表情恰好等于lastEmoji，仍然会连击（因为相同）。
+      // 这样比较合理：用户连续点击具有相同表情的按钮（不论位置）就能连击，但按钮会变，所以他们会追逐那个表情。
+      // 为了更有乐子，lastEmoji保留用户点击时刻的表情。没问题。
+
+      // 但还有个问题：如果新表情恰好和lastEmoji相同，且用户马上再点同一个按钮，那就会继续连击。更快乐！
+
+      // 显示连击消息 (如果连击大于1)
+      if (comboCount > 1) {
+        setStatusMessage(`🔥 连击 x${comboCount}！ +${pointsEarned}分`, true);
+      } else {
+        setStatusMessage(`😝 +${pointsEarned}分`, false);
+      }
+
+      // 连击音效？没有音频，但我们可以再闪一下状态
+
+      // 额外：如果分数超过某个值可以加彩蛋？不加，保持简洁但有趣
+    }
+
+    // 初始化UI: 创建8个表情按钮
+    function buildGameBoard() {
+      // 清空网格
+      emojiGrid.innerHTML = '';
+      emojiButtons = [];
+
+      for (let i = 0; i < GRID_SIZE; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'emoji-btn';
+        btn.textContent = getRandomEmoji();  // 初始随机表情
+        btn.addEventListener('click', onEmojiClick);
+        // 防止移动端双击缩放干扰
+        btn.addEventListener('touchstart', (e) => {
+          // 只是为了流畅，不阻止默认，但是点击事件会照常触发
+        }, { passive: true });
+
+        emojiGrid.appendChild(btn);
+        emojiButtons.push(btn);
+      }
+    }
+
+    // 页面初始化
+    function initGame() {
+      buildGameBoard();
+      // 重置状态并开始
+      resetGame();
+
+      // 重置按钮监听
+      resetBtn.addEventListener('click', () => {
+        // 重置时如果游戏还在进行也强制重置
+        resetGame();
+      });
+    }
+
+    // 页面加载后启动
+    window.addEventListener('DOMContentLoaded', initGame);
+  })();
 </script>
 </body>
 </html>
